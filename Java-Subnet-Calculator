@@ -1,0 +1,60 @@
+import java.util.Scanner;
+
+public class SubnetCalculator {
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("--- IP Alt Ağ (Subnet) Hesaplayıcı ---");
+        System.out.print("IP Adresini ve CIDR değerini girin (Örn: 192.168.1.50/24): ");
+        String input = scanner.nextLine();
+
+        try {
+            String[] parts = input.split("/");
+            String ip = parts[0];
+            int prefix = Integer.parseInt(parts[1]);
+
+            if (prefix < 0 || prefix > 32) {
+                System.out.println("Hata: CIDR değeri 0 ile 32 arasında olmalıdır.");
+                return;
+            }
+
+            int ipInt = ipToInt(ip);
+            int maskInt = ~((1 << (32 - prefix)) - 1);
+            int networkInt = ipInt & maskInt;
+            int broadcastInt = networkInt | ~maskInt;
+
+            System.out.println("\n--- Sonuçlar ---");
+            System.out.println("IP Adresi: " + ip);
+            System.out.println("Alt Ağ Maskesi (Subnet Mask): " + intToIp(maskInt));
+            System.out.println("Ağ Adresi (Network Address): " + intToIp(networkInt));
+            System.out.println("Yayın Adresi (Broadcast Address): " + intToIp(broadcastInt));
+            
+            // 31 ve 32 / CIDR değerleri için özel durum (Point-to-Point)
+            int usableHosts = (prefix >= 31) ? 0 : (int) Math.pow(2, 32 - prefix) - 2;
+            System.out.println("Kullanılabilir Host Sayısı: " + usableHosts);
+
+        } catch (Exception e) {
+            System.out.println("Hatalı giriş yaptınız. Lütfen '192.168.1.1/24' formatında girin.");
+        }
+        scanner.close();
+    }
+
+    // IP string formatını 32-bit tam sayıya çeviren metod
+    private static int ipToInt(String ipAddress) {
+        String[] octets = ipAddress.split("\\.");
+        int result = 0;
+        for (int i = 0; i < 4; i++) {
+            result |= Integer.parseInt(octets[i]) << (24 - (8 * i));
+        }
+        return result;
+    }
+
+    // 32-bit tam sayıyı okunabilir IP string formatına çeviren metod
+    private static String intToIp(int ipInt) {
+        return String.format("%d.%d.%d.%d",
+                (ipInt >> 24) & 0xFF,
+                (ipInt >> 16) & 0xFF,
+                (ipInt >> 8) & 0xFF,
+                ipInt & 0xFF);
+    }
+}
